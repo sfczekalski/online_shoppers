@@ -1,0 +1,85 @@
+---
+title: "Online shoppers analysis"
+output: html_document
+author: "Stanislaw Czekalski"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(ggplot2)
+library(tidyverse)
+library(dplyr)
+library(scales)
+library(tidyr)
+```
+
+In this document I am going to analyze online shoppers data.
+
+It describes 12,330 user sessions browsing online shop. Dataset comes from UCI Machine Learning Repository. Observations are associated with labels indicating whenever current session ended up with consumer buying something or not. Primary goal of this data is to perform classification of sessions, but the aim of my analysys is to explore the data and get knowledge about users' behaviour.
+
+Raw data looks like this:
+```{r read_data}
+df = read.csv("/home/sfczekalski/Documents/ZED/online_shoppers/online_shoppers_intention.csv")
+head(df, 5)
+```
+
+We can see that variables of different types, some of them are categorical. I will set their types to factors.
+
+```{r factors, echo=FALSE}
+df$OperatingSystems <- factor(df$OperatingSystems)
+df$Browser <- factor(df$Browser)
+df$Region <- factor(df$Region)
+df$TrafficType <- factor(df$TrafficType)
+df$VisitorType <- factor(df$VisitorType)
+df$Month <- factor(df$Month, levels = c("Feb", "Mar", "May", "June", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"))
+```
+
+We should always check for missing values, executing any(is.na(df)) comes in handy.
+```{r missing_values, echo=FALSE}
+any(is.na(df))
+```
+
+There is no missing values in this data.
+
+First thing that must be done is checking class distribution. Most frequently, we do it using bar plot.
+As one can see, we deal with a problem of imbalanced class distribution.
+```{r class_distribution_relative, echo=FALSE}
+ggplot(data = df, aes(x = Revenue, y = (..count..)/sum(..count..))) + 
+  geom_bar(mapping = aes(fill = Revenue)) +
+  geom_text(aes(label = scales::percent((..count..)/sum(..count..))), stat= "count", vjust = -.5) +
+  scale_y_continuous(labels=scales::percent) +
+  ylab("Class frequencies")
+```
+
+
+Let's print summary of variables' distributions.
+```{r distributions_summary, echo=FALSE}
+summary(df)
+```
+
+We can see that most user visit parts of the website that are product related. They also spend the most time on them. "Bounce Rate", "Exit Rate" and "Page Value" are somehow misleading names, after looking up we may discover that they are related to Google Analytics names. "Bounce Rate" describe percentage of visitors that come from Google Analytics,  enter the site and then leave ("bounce") without triggering any other requests to the analytics server during that session. "Exit Rate" feature for a specific web page is calculated as for all pageviews to the page, the percentage that were the last in the session. The "Page Value" feature represents the average value for a web page that a user visited before completing an e-commerce transaction. Values of all "Bounde Rate" and "Exit Rate" are quite low. To furhter investigate this features we can plot their distributions.
+
+Most of values for all three of them are zeros, so I will only plot distribution of non zero values to have a closer look. Additionaly, I decided to split each distribution to two, depending on classes.
+
+```{r BounceRates_distribution_classes, echo=FALSE}
+df %>%
+  filter(BounceRates > 0) %>%
+  ggplot(mapping = aes(x = BounceRates, color = Revenue)) + 
+  geom_freqpoly(binwidth = 0.001)
+```
+
+```{r ExitRates_distribution_classes, echo=FALSE}
+df %>%
+  filter(ExitRates > 0) %>%
+  ggplot(mapping = aes(x = ExitRates, color = Revenue)) + 
+  geom_freqpoly(binwidth = 0.001)
+```
+
+```{r PageValues_distribution_classes, echo=FALSE}
+df %>%
+  filter(PageValues > 0) %>%
+  ggplot(mapping = aes(x = PageValues, color = Revenue)) + 
+  geom_freqpoly(binwidth = 1)
+```
+
+We can see that distributions of all three features differ depending on classes. Especially, all observations having bounce rates and exit rates 0.20 belong to negative class. Distribution of page values is more skewed towards high values for positive class. It means that all three variables might be usefull for building classification model.
