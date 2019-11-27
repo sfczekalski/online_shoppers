@@ -4,7 +4,7 @@ library(dplyr)
 library(scales)
 library(tidyr)
 
-df = read.csv("/home/sfczekalski/Documents/ZED/online_shoppers/online_shoppers_intention.csv")
+df = read.csv("/home/sfczekalski/Documents/ZED/project/online_shoppers/online_shoppers_intention.csv")
 head(df, 5)
 
 # Categorical variables
@@ -36,8 +36,7 @@ head(df, 5)
 df %>%
   filter(Sum_Duration > 0) %>%
   ggplot(mapping = aes(x = Sum_Duration, color = Revenue)) +
-  geom_freqpoly(binwidth = 50) +
-  facet_wrap(~Revenue)
+  geom_density()
 
 # Histograms of types of visit counts
 df %>%
@@ -64,6 +63,12 @@ ggplot(data = df, mapping = aes(x = BounceRates, fill = Revenue)) +
 ggplot(data = df, mapping = aes(x = ExitRates, fill = Revenue)) + 
   geom_histogram()
 
+df = mutate(df, Rate = 100 * BounceRates * ExitRates)
+df %>%
+  filter(Rate > 1) %>%
+  ggplot(data = df, mapping = aes(x = Rate, color = Revenue)) + 
+  geom_density()
+
 df %>%
   filter(PageValues > 0) %>%
   ggplot(mapping = aes(x = PageValues, fill = Revenue)) + 
@@ -71,9 +76,7 @@ df %>%
 
 # Class proportion depending on month
 ggplot(data = df, group=Month) + 
-  stat_count(aes(x = Revenue, y = (..count..)/sum(..count..), fill = Revenue)) + 
-  geom_text(aes(label = scales::percent((..count..)/sum(..count..))), stat= "count", vjust = -.5) +
-  scale_y_continuous(labels=scales::percent) +
+  geom_histogram() +
   ylab("Relative class frequencies")
 
 
