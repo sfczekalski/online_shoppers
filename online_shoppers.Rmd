@@ -1,14 +1,14 @@
 ---
 title: "Online shoppers analysis"
-output: pdf_document
-author: "Stanislaw Czekalski"
+output: html_document
+author: "Stanislaw Czekalski, Szymon Puszcz"
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
-library(tinytex)
-xfun::session_info('rmarkdown')
-tinytex::tinytex_root()
+#library(tinytex)
+#xfun::session_info('rmarkdown')
+#tinytex::tinytex_root()
 library(ggplot2)
 library(tidyverse)
 library(dplyr)
@@ -16,9 +16,9 @@ library(scales)
 library(tidyr)
 ```
 
-In this document I am going to analyze online shoppers data.
+In this document we are going to analyze online shoppers data.
 
-It describes 12,330 user sessions browsing online shop. Dataset comes from UCI Machine Learning Repository. Observations are associated with labels indicating whenever current session ended up with consumer buying something or not. Primary goal of this data is to perform classification of sessions, but the aim of my analysys is to explore the data and get knowledge about users' behaviour.
+It describes 12,330 user sessions browsing online shop. Dataset comes from UCI Machine Learning Repository. Observations are associated with labels indicating whenever current session ended up with consumer buying something or not. Primary task that can be done using this data is to perform classification of sessions, but the aim of our analysys is to explore the data and get knowledge about users' behaviour.
 
 Raw data looks like this:
 ```{r read_data}
@@ -26,7 +26,7 @@ df = read.csv("online_shoppers_intention.csv")
 head(df, 5)
 ```
 
-We can see that variables of different types, some of them are categorical. I will set their types to factors.
+We can see that variables of different types, some of them are categorical. We will set their types to factors.
 
 ```{r factors, echo=FALSE}
 df$OperatingSystems <- factor(df$OperatingSystems)
@@ -62,7 +62,7 @@ summary(df)
 
 We can see that most user visit parts of the website that are product related. They also spend the most time on them. "Bounce Rate", "Exit Rate" and "Page Value" are somehow misleading names, after looking up we may discover that they are related to Google Analytics names. "Bounce Rate" describe percentage of visitors that come from Google Analytics,  enter the site and then leave ("bounce") without triggering any other requests to the analytics server during that session. "Exit Rate" feature for a specific web page is calculated as for all pageviews to the page, the percentage that were the last in the session. The "Page Value" feature represents the average value for a web page that a user visited before completing an e-commerce transaction. Values of all "Bounde Rate" and "Exit Rate" are quite low. To furhter investigate this features we can plot their distributions.
 
-Most of values for all three of them are zeros, so I will only plot distribution of non zero values to have a closer look. Additionaly, I decided to split each distribution to two, depending on classes.
+Most of values for all three of them are zeros, so we will only plot distribution of non zero values to have a closer look. Additionaly, we decided to split each distribution to two, depending on classes.
 
 ```{r BounceRates_distribution_classes, echo=FALSE, warning=FALSE}
 df %>%
@@ -118,7 +118,7 @@ ggplot(data = df, aes(x = Revenue, y = (..count..)/sum(..count..)), group = Mont
   ylab("Relative class frequencies")
 ```
 
-Let's look at month information. Data is not evenly distributed between month, for some of them we have very little information. For instance, classification model might learn, that there is no point predicting a purchase for session in June, because chances are that no session from this month in training set will be part of our training set. Using this feature might cause overfitting.
+Let's look at month information. Data is not evenly distributed between months, for some of them we have very little information. For instance, classification model might learn, that there is no point predicting a purchase for session in June, because chances are that no session ending with a purchase from this month will be part of our training set. Using this feature might cause overfitting.
 
 ```{r os, echo=FALSE, warning=FALSE}
 # Operating system
@@ -141,7 +141,7 @@ df %>%
   ylab("Class count depending on OS: rare categories")
 ```
 
-There is 8 kinds of operating systems used by our users. Some of them are much more popular, and some of them are very rare. It may make sense to group all rare categories into one, because alone they are not very informative.
+There is 8 kinds of operating systems used by our users. Some of them are much more popular, and some of them are very rare. It may make sense to group all rare categories into one, because alone they are not very informative. We may wrongly conclude that people using OS number 5 buy products more often than other users, but we need to be careful, that little data can be misleading.
 
 ```{r browsers, echo=FALSE, warning=FALSE}
 # Browser
@@ -165,7 +165,7 @@ df %>%
   ylab("Class count depending on browser")
 ```
 
-In case of browsers, we have two main categories, and quite a few less popular ones. We draw class distribution in each category to check if we may infer some class information depending on browser type. Once again, grouping rare categories might be desireble.
+In case of browsers, we have two main categories, and quite a few less popular ones. We draw class distribution in each category to check if we may infer some class information depending on browser type. Once again, grouping rare categories might be desirable
 
 ```{r region, echo=FALSE, warning=FALSE}
 # Region
@@ -215,7 +215,7 @@ df %>%
   ylab("Class proportion")
 ```
 
-There is hard to reason what some traffic types might represent due to values annonymization.
+It is hard to reason what some traffic types might represent due to values annonymization. If we had access to description of individual levels of this feature we could discover that some traffic types come from people that are not typical users, and we are not interested in their behaviour. In this case, such observations should be removed from the dataset.
 
 ```{r visitor_type, echo=FALSE, warning=FALSE}
 # Visitor type
@@ -239,10 +239,6 @@ ggplot(data = df) +
   ylab("Weekend count")
 
 # Class depending on weekend / no weekend
-ggplot(data = df) + 
-  geom_bar(mapping = aes(x = Revenue, fill = Revenue)) +
-  facet_grid(~Weekend) +
-  ylab("Class proportion")
 
 ggplot(data = df, aes(x = Revenue, y = (..count..)/sum(..count..))) + 
   geom_bar(mapping = aes(fill = Revenue)) +
@@ -251,3 +247,5 @@ ggplot(data = df, aes(x = Revenue, y = (..count..)/sum(..count..))) +
   facet_grid(~Weekend) +
   ylab("Relative class frequencies")
 ```
+
+We can see that users that came to the website during the weekend are a little bit more likely to buy something. During the week rate of buyers is about 17.5%, and for the weekend its 20%. It is not a suprise, during the weekend people usually have more time for shopping.
