@@ -46,6 +46,7 @@ There is no missing values in this data.
 
 First thing that must be done is checking class distribution. Most frequently, we do it using bar plot.
 As one can see, we deal with a problem of imbalanced class distribution.
+
 ```{r class_distribution_relative, echo=FALSE, warning=FALSE}
 ggplot(data = df, aes(x = Revenue, y = (..count..)/sum(..count..))) + 
   geom_bar(mapping = aes(fill = Revenue)) +
@@ -60,28 +61,34 @@ Let's print summary of variables' distributions.
 summary(df)
 ```
 
-We can see that most user visit parts of the website that are product related. They also spend the most time on them. "Bounce Rate", "Exit Rate" and "Page Value" are somehow misleading names, after looking up we may discover that they are related to Google Analytics names. "Bounce Rate" describe percentage of visitors that come from Google Analytics,  enter the site and then leave ("bounce") without triggering any other requests to the analytics server during that session. "Exit Rate" feature for a specific web page is calculated as for all pageviews to the page, the percentage that were the last in the session. The "Page Value" feature represents the average value for a web page that a user visited before completing an e-commerce transaction. Values of all "Bounde Rate" and "Exit Rate" are quite low. To furhter investigate this features we can plot their distributions.
+We can see that most user visit parts of the website that are product related. They also spend the most time on them. "**Bounce Rate**", "**Exit Rate**" and "**Page Value**" are somehow misleading names, after looking up we may discover that they are related to Google Analytics names. 
+
+"**Bounce Rate**" describe percentage of visitors that come from Google Analytics,  enter the site and then leave ("bounce") without triggering any other requests to the analytics server during that session.
+
+"**Exit Rate**" feature for a specific web page is calculated as for all pageviews to the page, the percentage that were the last in the session. 
+
+The "**Page Value**" feature represents the average value for a web page that a user visited before completing an e-commerce transaction. Values of all "Bounde Rate" and "Exit Rate" are quite low. To furhter investigate this features we can plot their distributions.
 
 Most of values for all three of them are zeros, so we will only plot distribution of non zero values to have a closer look. Additionaly, we decided to split each distribution to two, depending on classes.
 
 ```{r BounceRates_distribution_classes, echo=FALSE, warning=FALSE}
 df %>%
   filter(BounceRates > 0) %>%
-  ggplot(mapping = aes(x = BounceRates, color = Revenue)) + 
+  ggplot(mapping = aes(x = BounceRates, fill = Revenue)) + 
   geom_density(alpha=.5)
 ```
 
 ```{r ExitRates_distribution_classes, echo=FALSE, warning=FALSE}
 df %>%
   filter(ExitRates > 0) %>%
-  ggplot(mapping = aes(x = ExitRates, color = Revenue)) + 
+  ggplot(mapping = aes(x = ExitRates, fill = Revenue)) + 
   geom_density(alpha=.5)
 ```
 
 ```{r PageValues_distribution_classes, echo=FALSE, warning=FALSE}
 df %>%
   filter(PageValues > 0) %>%
-  ggplot(mapping = aes(x = PageValues, color = Revenue)) + 
+  ggplot(mapping = aes(x = PageValues, fill = Revenue)) + 
   geom_density(alpha=.5)
 ```
 
@@ -92,18 +99,18 @@ Next, we will take a look at times the user spend on different parts of the webs
 ```{r times_histograms, echo=FALSE, warning=FALSE}
 df %>%
   filter(Administrative > 0) %>%
-  ggplot(mapping = aes(x = Administrative, color = Revenue)) + 
-  geom_density()
+  ggplot(mapping = aes(x = Administrative, fill = Revenue)) + 
+  geom_density(alpha=.5)
 
 df %>%
   filter(Informational > 0) %>%
-  ggplot(mapping = aes(x = Informational, color = Revenue)) + 
-  geom_density()
+  ggplot(mapping = aes(x = Informational, fill = Revenue)) + 
+  geom_density(alpha=.5)
 
 df %>%
   filter(ProductRelated > 0) %>%
-  ggplot(mapping = aes(x = ProductRelated, color = Revenue)) + 
-  geom_density()
+  ggplot(mapping = aes(x = ProductRelated, fill = Revenue)) + 
+  geom_density(alpha=.5)
 ```
 
 As one can see, there is no much difference bitween times spend on parts of website depending on class. This raw features might not be useful for prediction.
@@ -114,7 +121,7 @@ ggplot(data = df, aes(x = Revenue, y = (..count..)/sum(..count..)), group = Mont
   geom_bar(mapping = aes(fill = Revenue)) +
   geom_text(aes(label = scales::percent((..count..)/sum(..count..))), stat= "count", vjust = -.5) +
   scale_y_continuous(labels=scales::percent) +
-  facet_wrap(~Month) +
+  facet_wrap(~Month, ncol = 3) +
   ylab("Relative class frequencies")
 ```
 
@@ -240,12 +247,25 @@ ggplot(data = df) +
 
 # Class depending on weekend / no weekend
 
-ggplot(data = df, aes(x = Revenue, y = (..count..)/sum(..count..))) + 
+ggplot(data = df %>% filter(Weekend==FALSE), 
+       aes(x = Revenue, y = (..count..)/sum(..count..))
+       ) + 
   geom_bar(mapping = aes(fill = Revenue)) +
   geom_text(aes(label = scales::percent((..count..)/sum(..count..))), stat= "count", vjust = -.5) +
   scale_y_continuous(labels=scales::percent) +
-  facet_grid(~Weekend) +
-  ylab("Relative class frequencies")
+  # facet_grid(~Weekend) +
+  ylab("Relative class frequencies") +
+  ggtitle("Revenue distribution during workdays")
+
+ggplot(data = df %>% filter(Weekend==TRUE), 
+       aes(x = Revenue, y = (..count..)/sum(..count..))
+       ) + 
+  geom_bar(mapping = aes(fill = Revenue)) +
+  geom_text(aes(label = scales::percent((..count..)/sum(..count..))), stat= "count", vjust = -.5) +
+  scale_y_continuous(labels=scales::percent) +
+  # facet_grid(~Weekend) +
+  ylab("Relative class frequencies") + 
+  ggtitle("Revenue distribution during weekend")
 ```
 
 We can see that users that came to the website during the weekend are a little bit more likely to buy something. During the week rate of buyers is about 17.5%, and for the weekend its 20%. It is not a suprise, during the weekend people usually have more time for shopping.
