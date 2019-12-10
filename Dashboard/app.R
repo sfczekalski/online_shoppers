@@ -1,4 +1,6 @@
 library(shinydashboard)
+library(dplyr)
+library(ggplot2)
 
 ui <- dashboardPage(
     dashboardHeader(title = "Online shoppers dashboard"),
@@ -13,7 +15,15 @@ ui <- dashboardPage(
                 selectInput("website", "Website:", 
                             choices=c("Administrative", "Informational", "ProductRelated"))
             )
+        ),
+        fluidRow(
+            box(plotOutput("plot2")),
+            box(
+            selectInput("month", "Month:", 
+                        choices=c("Feb", "Mar", "May", "June", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"))
+            )
         )
+        
     )
 )
 
@@ -32,11 +42,24 @@ server <- function(input, output) {
     df <- load_data()
     
     output$plot1 <- renderPlot({
-        df %>% filter_(paste(input$website,">",0)) %>%
-            # df %>% filter(Administrative>0) %>%
-            ggplot(mapping = aes_string(x = "Administrative", fill = "Revenue")) +  
-            geom_density(alpha=.5)
-            ggtitle(input$website)
+        df %>%
+            filter_(paste(input$website,">",0)) %>%
+            ggplot(mapping = aes_string(x = input$website, fill = "Revenue")) + 
+            geom_density(alpha=.5) +
+            ggtitle(paste("Density of revenue on", input$website, "pages"))
+    })
+    
+    output$plot2 <- renderPlot({
+        df %>%
+            filter(Month == input$month) %>%
+            group_by(Revenue) %>%
+            summarise(n = n()) %>%
+            mutate(freq = n / sum(n)) %>%
+            ggplot(aes(x="", y=freq, fill=Revenue)) +
+            geom_bar(width = 1, stat = "identity") +
+            coord_polar("y", start=0) +
+            ggtitle(paste("Revenue distribution in", input$month))
+      
     })
 }
 
