@@ -1,0 +1,161 @@
+---
+title: "Untitled"
+output: 
+  flexdashboard::flex_dashboard:
+    orientation: columns
+    vertical_layout: scroll
+runtime: shiny
+---
+
+```{r setup, include=FALSE}
+library(flexdashboard)
+library(dplyr)
+library(ggplot2)
+library(scales)
+```
+
+```{r setup_df, include=FALSE}
+df <- read.csv("online_shoppers_intention.csv")
+    df$OperatingSystems <- factor(df$OperatingSystems)
+    df$Browser <- factor(df$Browser)
+    df$Region <- factor(df$Region)
+    df$TrafficType <- factor(df$TrafficType)
+    df$VisitorType <- factor(df$VisitorType)
+    df$Month <- factor(df$Month, levels = c("Feb", "Mar", "May", "June", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"))
+mycols <- c("#CD534CFF", "#EFC000FF","#0073C2FF", "#868686FF")
+```
+
+Inputs {.sidebar}
+-------------------------------------
+
+```{r inputs}
+# shiny inputs defined here
+
+selectInput("website", "Website:", 
+                          choices=c("Administrative", "Informational", "ProductRelated"))
+
+selectInput("month", 
+            "Month:", 
+            choices=c("Feb", "Mar", "May", "June", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")
+            )
+```
+
+Column {.tabset data-width=550}
+-----------------------------------------------------------------------
+
+### New Visitor
+
+```{r new_visitor}
+
+df %>%
+  filter(VisitorType == "New_Visitor") %>%
+  group_by(Revenue) %>%
+  summarise(n = n()) %>%
+  mutate(count = sum(n)) %>%
+  mutate(freq = n/count) %>%
+  ggplot( aes(x = "", y = freq, fill=Revenue)) +
+  geom_bar(width = 1, size=1, stat = "identity", color="white") +
+  coord_polar("y", start = 0) +
+  geom_text(aes(label=percent(freq)), position = position_stack(vjust=0.5), color="white") +
+  scale_fill_manual(values = mycols) +
+  theme_void()  
+
+```
+
+### Returning Visitor
+
+```{r returning_visitor}
+
+df %>%
+  filter(VisitorType == "Returning_Visitor") %>%
+  group_by(Revenue) %>%
+  summarise(n = n()) %>%
+  mutate(count = sum(n)) %>%
+  mutate(freq = n/count) %>%
+  ggplot( aes(x = "", y = freq, fill=Revenue)) +
+  geom_bar(width = 1, size=1, stat = "identity", color="white") +
+  coord_polar("y", start = 0) +
+  geom_text(aes(label=percent(freq)), position = position_stack(vjust=0.5), color="white") +
+  scale_fill_manual(values = mycols) +
+  theme_void()  
+
+```
+
+### Other
+
+```{r other}
+
+df %>%
+  filter(VisitorType == "Other") %>%
+  group_by(Revenue) %>%
+  summarise(n = n()) %>%
+  mutate(count = sum(n)) %>%
+  mutate(freq = n/count) %>%
+  ggplot( aes(x = "", y = freq, fill=Revenue)) +
+  geom_bar(width = 1, size=1, stat = "identity", color="white") +
+  coord_polar("y", start = 0) +
+  geom_text(aes(label=percent(freq)), position = position_stack(vjust=0.5), color="white") +
+  scale_fill_manual(values = mycols) +
+  theme_void() 
+
+```
+
+### Total
+
+```{r total}
+
+df %>%
+    group_by(VisitorType) %>%
+    summarise(n = n()) %>%
+    mutate(count = sum(n)) %>%
+    mutate(freq = n/count) %>%
+  ggplot( aes(x = "", y = freq, fill = VisitorType)) +
+  geom_bar(width = 1, stat = "identity", color = "white") +
+  coord_polar("y", start = 0) +
+  geom_text(aes(label=percent(freq)), position = position_stack(vjust=0.5), color="white") +
+  scale_fill_manual(values = mycols) +
+  theme_void() 
+
+```
+
+
+Column {data-width=450}
+-----------------------------------------------------------------------
+
+### Density of Revenue per type of website
+
+```{r}
+
+renderPlot({
+        df %>%
+            filter_(paste(input$website,">",0)) %>%
+            ggplot(mapping = aes_string(x = input$website, fill = "Revenue")) + 
+            geom_density(alpha=.5) +
+            ggtitle(paste("Density of revenue on", input$website, "pages")) +
+            scale_fill_manual(values = mycols) + 
+            theme_light()
+    })
+
+```
+
+### Revenue distribution per month
+
+```{r}
+
+renderPlot({
+        df %>%
+            filter(Month == input$month) %>%
+            group_by(Revenue) %>%
+            summarise(n = n()) %>%
+            mutate(freq = n / sum(n)) %>%
+            ggplot(aes(x="", y=freq, fill=Revenue)) +
+            geom_bar(width = 1, size = 1, stat = "identity", color="white") +
+            coord_polar(theta="y", start=0) +
+            geom_text(aes(label=percent(freq)), position = position_stack(vjust=0.5), color="white") +
+            scale_fill_manual(values = mycols) +
+            theme_void() 
+      
+    })
+
+```
+
