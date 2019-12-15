@@ -1,8 +1,8 @@
 ---
-title: "Untitled"
+title: "Online shoppers dashboard"
 output: 
   flexdashboard::flex_dashboard:
-    orientation: columns
+    orientation: rows
     vertical_layout: scroll
 runtime: shiny
 ---
@@ -23,6 +23,8 @@ df <- read.csv("online_shoppers_intention.csv")
     df$VisitorType <- factor(df$VisitorType)
     df$Month <- factor(df$Month, levels = c("Feb", "Mar", "May", "June", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"))
 mycols <- c("#CD534CFF", "#EFC000FF","#0073C2FF", "#868686FF")
+
+months <- nrow(df %>% group_by(Month)%>% tally())
 ```
 
 Inputs {.sidebar}
@@ -39,6 +41,52 @@ selectInput("month",
             choices=c("Feb", "Mar", "May", "June", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")
             )
 ```
+
+Row
+-----------------------------------------------------------------------
+
+### Total Revenues
+
+```{r}
+renderValueBox({
+  avgRevenue <- nrow(df %>% filter(Revenue == TRUE)) / months
+  
+ revenue <- nrow(df %>% filter(Revenue == TRUE & Month == input$month)) 
+  
+  valueBox(revenue, caption = 'Total Revenues', icon = "fa-shopping-cart",
+           color=ifelse(revenue>=avgRevenue, "success", "warning"))  
+})
+
+```
+
+### Total visitors 
+
+```{r}
+renderValueBox({
+  avgVisitors <- nrow(df) / months
+  visitors <- nrow(df %>% filter(Month == input$month)) 
+  
+  valueBox(visitors, caption='Total visitors', icon = "fa-users",
+           color=ifelse(visitors>=avgVisitors, "success", "warning"))
+})
+```
+
+### Average traffic 
+
+```{r}
+renderValueBox({
+  traffic <- df %>% 
+    filter(Month == input$month) %>%
+    group_by(TrafficType) %>%
+    summarise(n = n()) %>%
+    arrange(desc(n)) %>%
+    select(TrafficType) %>%
+    slice(1)
+    
+  valueBox(traffic, caption='Average traffic type', icon = "fa-bus")
+})
+```
+
 
 Column {.tabset data-width=550}
 -----------------------------------------------------------------------
@@ -103,8 +151,9 @@ df %>%
 ### Total
 
 ```{r total}
-
+renderPlot({
 df %>%
+    filter(Month == input$month) %>%
     group_by(VisitorType) %>%
     summarise(n = n()) %>%
     mutate(count = sum(n)) %>%
@@ -115,7 +164,7 @@ df %>%
   geom_text(aes(label=percent(freq)), position = position_stack(vjust=0.5), color="white") +
   scale_fill_manual(values = mycols) +
   theme_void() 
-
+})
 ```
 
 
@@ -128,6 +177,7 @@ Column {data-width=450}
 
 renderPlot({
         df %>%
+            filter(Month == input$month) %>%
             filter_(paste(input$website,">",0)) %>%
             ggplot(mapping = aes_string(x = input$website, fill = "Revenue")) + 
             geom_density(alpha=.5) +
