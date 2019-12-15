@@ -12,6 +12,9 @@ library(flexdashboard)
 library(dplyr)
 library(ggplot2)
 library(scales)
+library(randomForest)
+library(umap)
+library(reticulate)
 ```
 
 ```{r setup_df, include=FALSE}
@@ -27,6 +30,19 @@ mycols <- c("#CD534CFF", "#EFC000FF","#0073C2FF", "#868686FF")
 months <- nrow(df %>% group_by(Month)%>% tally())
 ```
 
+```{r calculate_prox, include=FALSE}
+sample_df <- df %>%
+  group_by(Revenue) %>%
+  sample_frac(0.2) %>%
+  ungroup
+
+set.seed(42)
+rf <- randomForest(x = sample_df[,1:17], y = factor(sample_df$Revenue), ntree = 100, proximity = T, 
+                   importance = TRUE, do.trace = 100)
+prox <- rf$proximity
+```
+
+
 Inputs {.sidebar}
 -------------------------------------
 
@@ -40,6 +56,10 @@ selectInput("month",
             "Month:", 
             choices=c("Feb", "Mar", "May", "June", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")
             )
+
+sliderInput("n_neighbours", "Num of neighbours",min = 3, max = 50, step = 1, value = 15)
+sliderInput("min_dist", "Minimum distance",min = 0.01, max = 0.5, step = 0.01, value = 0.2)
+
 ```
 
 Row
@@ -88,7 +108,7 @@ renderValueBox({
 ```
 
 
-Column {.tabset data-width=550}
+Column {.tabset}
 -----------------------------------------------------------------------
 
 ### New Visitor
@@ -167,9 +187,31 @@ df %>%
 })
 ```
 
+Column { .tabset data-width=450}
+-------------------------------------------------------------------
 
-Column {data-width=450}
------------------------------------------------------------------------
+### UMAP
+```{r}
+
+renderPlot({
+  dist <- 1/(1+prox)
+  umap.res <- umap(dist, method = "umap-learn", n_components=2, metric="precomputed", transform_seed=42, 
+                   n_neighbors=input$n_neighbours, min_dist=input$min_dist)
+  embedding <- umap.res$layout
+  
+  embedding_df <- data.frame(embedding)
+  embedding_df$class <- sample_df$Revenue
+  
+  embedding_df %>%
+    ggplot(mapping = aes(x = embedding_df[,1], y = embedding_df[,2], color = class)) + 
+    geom_point(alpha=.5, size=3) +
+    labs(x="UMAP1", y="UMAP2") +
+    scale_color_manual(values = mycols) +
+    theme_light() 
+})
+
+```
+
 
 ### Density of Revenue per type of website
 
@@ -179,7 +221,7 @@ renderPlot({
         df %>%
             filter(Month == input$month) %>%
             filter_(paste(input$website,">",0)) %>%
-            ggplot(mapping = aes_string(x = input$website, fill = "Revenue")) + 
+            ggplot(mapping = aes_string(x = input$website, fill = "Revenue", color = "Revenue")) + 
             geom_density(alpha=.5) +
             ggtitle(paste("Density of revenue on", input$website, "pages")) +
             scale_fill_manual(values = mycols) + 
