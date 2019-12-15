@@ -269,3 +269,73 @@ ggplot(data = df %>% filter(Weekend==TRUE),
 ```
 
 We can see that users that came to the website during the weekend are a little bit more likely to buy something. During the week rate of buyers is about 17.5%, and for the weekend its 20%. It is not a suprise, during the weekend people usually have more time for shopping.
+
+## Random Forest proximity
+In order to get a better understanding of our data, we may try to capture its structure. As we've observed our data consists of variables of different types: we have both numeric and categorical features, so it is difficult to come up with a metric suitable for clustering. What we can do instead is to train Random Forest, and get pairwise similarities between objects by counting how many times objects end up in the same leaf node, and use this proximity matrix to perform Multidimensional Scalling, that would create two-dimensional embediing of our data in some abstract space.
+
+```{r rf, echo=FALSE}
+library(randomForest)
+
+# this method is very memory intensive - it requires O(n**2) space
+# because of this, we use only 30% fraction of our data that can fit in RAM
+# stratified split is performed
+set.seed(42)
+sample_df <- df %>%
+  group_by(Revenue) %>%
+  sample_frac(0.2) %>%
+  ungroup
+
+set.seed(42)
+rf <- randomForest(x = sample_df[,1:17], y = factor(sample_df$Revenue), ntree = 100, proximity = T)
+prox <- rf$proximity
+
+```
+
+## Multidimensional Scalling
+
+```{r mds, echo=FALSE}
+library(MVA)
+
+set.seed(42)
+mds <- cmdscale(1/(prox +1))
+
+
+# emulate ggplot color palette
+gg_color_hue <- function(n) {
+  hues = seq(15, 375, length = n + 1)
+  hcl(h = hues, l = 65, c = 100)[1:n]
+}
+
+cols = gg_color_hue(2)
+plot(mds, col = cols[factor(sample_df$Revenue)], xlab="", ylab="")
+```
+
+Some structure of our data was obtained. We can see dense cluster of sessions that finished whith purchase, and a whole bunch of other sessions.
+
+Let's check which features our model considers important.
+
+```{r rf_importances}
+importance(rf_u)
+varImpPlot(rf_u)
+```
+
+Page Values seem to be really important, along with time spend on product-related page, laso exit rate and some other features. Month information might be a little bit confusing - our data is not very representative when it comes to this feature.
+
+We will try Multidimensional Scalling on proximity from Random Forest trained only on most important features.
+
+
+```{r mds_important}
+important_cols <- c("PageValues", "ProductRelated_Duration", "ExitRates", "ProductRelated",
+                    "Month", "BounceRates", "Administrative_Duration", "TrafficType", 
+                    "Region", "Administrative")
+
+set.seed(42)
+rf_imp <- randomForest(x = sample_df[,important_cols], y = factor(sample_df$Revenue), ntree = 100, proximity = T)
+prox_imp <- rf_imp$proximity
+
+set.seed(42)
+mds_imp <- cmdscale(1/(prox_imp +1))
+plot(mds_imp, col = cols[factor(sample_df$Revenue)], xlab="", ylab="")
+```
+
+The space is filpped horizontally, but overal structure remains similar. We can observe that in the case of using only most important features, more separeted clusters are visible.
