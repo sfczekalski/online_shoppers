@@ -1,14 +1,16 @@
 ---
 title: "Online shoppers analysis"
-output: html_document
 author: "Stanislaw Czekalski, Szymon Puszcz"
+output:
+  pdf_document: default
+  html_document: default
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
-#library(tinytex)
-#xfun::session_info('rmarkdown')
-#tinytex::tinytex_root()
+library(tinytex)
+xfun::session_info('rmarkdown')
+tinytex::tinytex_root()
 library(ggplot2)
 library(tidyverse)
 library(dplyr)
@@ -74,21 +76,21 @@ Most of values for all three of them are zeros, so we will only plot distributio
 ```{r BounceRates_distribution_classes, echo=FALSE, warning=FALSE}
 df %>%
   filter(BounceRates > 0) %>%
-  ggplot(mapping = aes(x = BounceRates, fill = Revenue)) + 
+  ggplot(mapping = aes(x = BounceRates, fill = Revenue, color = Revenue)) + 
   geom_density(alpha=.5)
 ```
 
 ```{r ExitRates_distribution_classes, echo=FALSE, warning=FALSE}
 df %>%
   filter(ExitRates > 0) %>%
-  ggplot(mapping = aes(x = ExitRates, fill = Revenue)) + 
+  ggplot(mapping = aes(x = ExitRates, fill = Revenue, color = Revenue)) + 
   geom_density(alpha=.5)
 ```
 
 ```{r PageValues_distribution_classes, echo=FALSE, warning=FALSE}
 df %>%
   filter(PageValues > 0) %>%
-  ggplot(mapping = aes(x = PageValues, fill = Revenue)) + 
+  ggplot(mapping = aes(x = PageValues, fill = Revenue, color = Revenue)) + 
   geom_density(alpha=.5)
 ```
 
@@ -99,17 +101,17 @@ Next, we will take a look at times the user spend on different parts of the webs
 ```{r times_histograms, echo=FALSE, warning=FALSE}
 df %>%
   filter(Administrative > 0) %>%
-  ggplot(mapping = aes(x = Administrative, fill = Revenue)) + 
+  ggplot(mapping = aes(x = Administrative, fill = Revenue, color = Revenue)) + 
   geom_density(alpha=.5)
 
 df %>%
   filter(Informational > 0) %>%
-  ggplot(mapping = aes(x = Informational, fill = Revenue)) + 
+  ggplot(mapping = aes(x = Informational, fill = Revenue, color = Revenue)) + 
   geom_density(alpha=.5)
 
 df %>%
   filter(ProductRelated > 0) %>%
-  ggplot(mapping = aes(x = ProductRelated, fill = Revenue)) + 
+  ggplot(mapping = aes(x = ProductRelated, fill = Revenue, color = Revenue)) + 
   geom_density(alpha=.5)
 ```
 
@@ -286,10 +288,14 @@ sample_df <- df %>%
   ungroup
 
 set.seed(42)
-rf <- randomForest(x = sample_df[,1:17], y = factor(sample_df$Revenue), ntree = 100, proximity = T)
+rf <- randomForest(x = sample_df[,1:17], y = factor(sample_df$Revenue), ntree = 100, proximity = T, 
+                   importance = TRUE, do.trace = 100)
 prox <- rf$proximity
 
+print(rf)
 ```
+
+OOB estimate of error suggests that we can trust the model.
 
 ## Multidimensional Scalling
 
@@ -307,7 +313,13 @@ gg_color_hue <- function(n) {
 }
 
 cols = gg_color_hue(2)
-plot(mds, col = cols[factor(sample_df$Revenue)], xlab="", ylab="")
+
+mds_df <- data.frame(mds)
+mds_df$class <- sample_df$Revenue
+
+mds_df %>%
+  ggplot(mapping = aes(x = mds_df[,1], y = mds_df[,2], color = class)) + 
+  geom_point(alpha=.5)
 ```
 
 Some structure of our data was obtained. We can see dense cluster of sessions that finished whith purchase, and a whole bunch of other sessions.
@@ -315,8 +327,9 @@ Some structure of our data was obtained. We can see dense cluster of sessions th
 Let's check which features our model considers important.
 
 ```{r rf_importances}
-importance(rf_u)
-varImpPlot(rf_u)
+importance(rf)
+varImpPlot(rf)
+
 ```
 
 Page Values seem to be really important, along with time spend on product-related page, laso exit rate and some other features. Month information might be a little bit confusing - our data is not very representative when it comes to this feature.
@@ -335,7 +348,36 @@ prox_imp <- rf_imp$proximity
 
 set.seed(42)
 mds_imp <- cmdscale(1/(prox_imp +1))
-plot(mds_imp, col = cols[factor(sample_df$Revenue)], xlab="", ylab="")
+
+mds_df <- data.frame(mds_imp)
+mds_df$class <- sample_df$Revenue
+
+mds_df %>%
+  ggplot(mapping = aes(x = mds_df[,1], y = mds_df[,2], color = class)) + 
+  geom_point(alpha=.5)
 ```
 
 The space is filpped horizontally, but overal structure remains similar. We can observe that in the case of using only most important features, more separeted clusters are visible.
+
+## Umap
+For some experimentation, we can try using UMAP algorithm on proximity matrix produced by Random Forest.
+It produces denser clusters, small one at the bottom left consists mostly of schoppers session! 
+
+
+```{r umap}
+library(umap)
+library(reticulate)
+
+dist <- 1/(1+prox)
+umap.res <- umap(dist, method = "umap-learn", n_components=2, metric="precomputed", transform_seed=42, 
+                 n_neighbors=15, min_dist=0.2)
+embedding <- umap.res$layout
+
+embedding_df <- data.frame(embedding)
+embedding_df$class <- sample_df$Revenue
+
+embedding_df %>%
+  ggplot(mapping = aes(x = embedding_df[,1], y = embedding_df[,2], color = class)) + 
+  geom_point(alpha=.5)
+
+```
