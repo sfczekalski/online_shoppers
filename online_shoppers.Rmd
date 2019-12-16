@@ -2,8 +2,8 @@
 title: "Online shoppers analysis"
 author: "Stanislaw Czekalski, Szymon Puszcz"
 output:
-  pdf_document: default
   html_document: default
+  pdf_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -54,7 +54,8 @@ ggplot(data = df, aes(x = Revenue, y = (..count..)/sum(..count..))) +
   geom_bar(mapping = aes(fill = Revenue)) +
   geom_text(aes(label = scales::percent((..count..)/sum(..count..))), stat= "count", vjust = -.5) +
   scale_y_continuous(labels=scales::percent) +
-  ylab("Class frequencies")
+  ylab("Class frequencies")+
+    theme_light() 
 ```
 
 
@@ -77,21 +78,24 @@ Most of values for all three of them are zeros, so we will only plot distributio
 df %>%
   filter(BounceRates > 0) %>%
   ggplot(mapping = aes(x = BounceRates, fill = Revenue, color = Revenue)) + 
-  geom_density(alpha=.5)
+  geom_density(alpha=.5)+
+    theme_light() 
 ```
 
 ```{r ExitRates_distribution_classes, echo=FALSE, warning=FALSE}
 df %>%
   filter(ExitRates > 0) %>%
   ggplot(mapping = aes(x = ExitRates, fill = Revenue, color = Revenue)) + 
-  geom_density(alpha=.5)
+  geom_density(alpha=.5) +
+  theme_light()
 ```
 
 ```{r PageValues_distribution_classes, echo=FALSE, warning=FALSE}
 df %>%
   filter(PageValues > 0) %>%
   ggplot(mapping = aes(x = PageValues, fill = Revenue, color = Revenue)) + 
-  geom_density(alpha=.5)
+  geom_density(alpha=.5) +
+  theme_light()
 ```
 
 We can see that distributions of all three features differ depending on classes. Especially, all observations having bounce rates and exit rates 0.20 belong to negative class. Distribution of page values is more skewed towards high values for positive class. It means that all three variables might be usefull for building classification model.
@@ -102,17 +106,20 @@ Next, we will take a look at times the user spend on different parts of the webs
 df %>%
   filter(Administrative > 0) %>%
   ggplot(mapping = aes(x = Administrative, fill = Revenue, color = Revenue)) + 
-  geom_density(alpha=.5)
+  geom_density(alpha=.5) +
+  theme_light()
 
 df %>%
   filter(Informational > 0) %>%
   ggplot(mapping = aes(x = Informational, fill = Revenue, color = Revenue)) + 
-  geom_density(alpha=.5)
+  geom_density(alpha=.5) +
+  theme_light()
 
 df %>%
   filter(ProductRelated > 0) %>%
   ggplot(mapping = aes(x = ProductRelated, fill = Revenue, color = Revenue)) + 
-  geom_density(alpha=.5)
+  geom_density(alpha=.5) +
+  theme_light()
 ```
 
 As one can see, there is no much difference bitween times spend on parts of website depending on class. This raw features might not be useful for prediction.
@@ -124,7 +131,8 @@ ggplot(data = df, aes(x = Revenue, y = (..count..)/sum(..count..)), group = Mont
   geom_text(aes(label = scales::percent((..count..)/sum(..count..))), stat= "count", vjust = -.5) +
   scale_y_continuous(labels=scales::percent) +
   facet_wrap(~Month, ncol = 3) +
-  ylab("Relative class frequencies")
+  ylab("Relative class frequencies") +
+  theme_light()
 ```
 
 Let's look at month information. Data is not evenly distributed between months, for some of them we have very little information. For instance, classification model might learn, that there is no point predicting a purchase for session in June, because chances are that no session ending with a purchase from this month will be part of our training set. Using this feature might cause overfitting.
@@ -133,21 +141,25 @@ Let's look at month information. Data is not evenly distributed between months, 
 # Operating system
 ggplot(data = df) + 
   geom_bar(mapping = aes(x = OperatingSystems, fill = OperatingSystems)) +
-  ylab("Count")
+  ylab("Count") +
+  theme_light()
 
 df %>%
   filter(OperatingSystems == 1:4) %>%
   ggplot() + 
   geom_bar(mapping = aes(x = Revenue, fill = Revenue)) +
   facet_wrap(~OperatingSystems) +
-  ylab("Class count depending on OS")
+  ylab("Class count depending on OS") +
+  theme_light()
 
 df %>%
   filter(OperatingSystems == 5:8) %>%
   ggplot() + 
   geom_bar(mapping = aes(x = Revenue, fill = Revenue)) +
   facet_wrap(~OperatingSystems) +
-  ylab("Class count depending on OS: rare categories")
+  ylab("Class count depending on OS: rare categories") +
+  theme_light()
+
 ```
 
 There is 8 kinds of operating systems used by our users. Some of them are much more popular, and some of them are very rare. It may make sense to group all rare categories into one, because alone they are not very informative. We may wrongly conclude that people using OS number 5 buy products more often than other users, but we need to be careful, that little data can be misleading.
@@ -156,7 +168,8 @@ There is 8 kinds of operating systems used by our users. Some of them are much m
 # Browser
 ggplot(data = df) + 
   geom_bar(mapping = aes(x = Browser, fill = Browser)) +
-  ylab("Count")
+  ylab("Count") +
+  theme_light()
 
 # Class count depending on browser
 df %>%
@@ -164,14 +177,16 @@ df %>%
   ggplot() + 
     geom_bar(mapping = aes(x = Revenue, fill = Revenue)) +
     facet_wrap(~Browser) +
-    ylab("Class count depending on browser")
+    ylab("Class count depending on browser") +
+  theme_light()
 
 df %>%
   filter(Browser == 3:13) %>%
   ggplot() + 
   geom_bar(mapping = aes(x = Revenue, fill = Revenue)) +
   facet_wrap(~Browser) +
-  ylab("Class count depending on browser")
+  ylab("Class count depending on browser") +
+  theme_light()
 ```
 
 In case of browsers, we have two main categories, and quite a few less popular ones. We draw class distribution in each category to check if we may infer some class information depending on browser type. Once again, grouping rare categories might be desirable
@@ -180,13 +195,15 @@ In case of browsers, we have two main categories, and quite a few less popular o
 # Region
 ggplot(data = df) + 
   geom_bar(mapping = aes(x = Region, fill = Region)) +
-  ylab("Count")
+  ylab("Count") +
+  theme_light()
 
 # Class count in each region
 ggplot(data = df) + 
   geom_bar(mapping = aes(x = Revenue, fill = Revenue)) +
   facet_wrap(~Region) +
-  ylab("Class count in each region")
+  ylab("Class count in each region") +
+  theme_light()
 ```
 
 Region distribution is more even compared to OS and browser. Still, class distribution in each region category doesn't seem to be very helpful in classification.
@@ -196,13 +213,15 @@ Region distribution is more even compared to OS and browser. Still, class distri
 # Traffic type
 ggplot(data = df) + 
   geom_bar(mapping = aes(x = TrafficType, fill = TrafficType)) +
-  ylab("Count")
+  ylab("Count") +
+  theme_light()
 
 # Class depending on traffic type
 ggplot(data = df) + 
   geom_bar(mapping = aes(x = Revenue, fill = Revenue)) +
   facet_wrap(~TrafficType, nrow = 4) +
-  ylab("Class proportion")
+  ylab("Class proportion") +
+  theme_light()
 ```
 
 Traffic type distribution is very uneven. This variable might be interesting, especially rare categories might represent untypical user, i.e. administrator or developer. We take a closer look below.
@@ -214,14 +233,17 @@ df %>%
   ggplot() +
     geom_bar(mapping = aes(x = Revenue, fill = Revenue)) +
     facet_wrap(~TrafficType, nrow = 4) +
-    ylab("Class proportion")
+    ylab("Class proportion") +
+  theme_light()
 
 df %>%
   filter(TrafficType==14 | TrafficType==15 | TrafficType==16 | TrafficType==17 | TrafficType == 18) %>%
   ggplot() +
   geom_bar(mapping = aes(x = Revenue, fill = Revenue)) +
   facet_wrap(~TrafficType, nrow = 4) +
-  ylab("Class proportion")
+  ylab("Class proportion") +
+  theme_light()
+
 ```
 
 It is hard to reason what some traffic types might represent due to values annonymization. If we had access to description of individual levels of this feature we could discover that some traffic types come from people that are not typical users, and we are not interested in their behaviour. In this case, such observations should be removed from the dataset.
@@ -230,13 +252,16 @@ It is hard to reason what some traffic types might represent due to values annon
 # Visitor type
 ggplot(data = df) + 
   geom_bar(mapping = aes(x = VisitorType, fill = VisitorType)) +
-  ylab("Count")
+  ylab("Count") +
+  theme_light()
 
 # Class depending on visitor type
 ggplot(data = df) + 
   geom_bar(mapping = aes(x = Revenue, fill = Revenue)) +
   facet_grid(~VisitorType) +
-  ylab("Class proportion")
+  ylab("Class proportion") +
+  theme_light()
+
 ```
 
 Most of the visitors are returning ones. Category "Other" looks suspicious, in this case we can be pretty sure it represents some abnormal type of users, like administrator or Google crowler, that is not likely to buy something!
@@ -245,7 +270,8 @@ Most of the visitors are returning ones. Category "Other" looks suspicious, in t
 # Weekend / no weekend count
 ggplot(data = df) + 
   geom_bar(mapping = aes(x = Weekend, fill = Weekend)) +
-  ylab("Weekend count")
+  ylab("Weekend count") +
+  theme_light()
 
 # Class depending on weekend / no weekend
 
@@ -257,7 +283,8 @@ ggplot(data = df %>% filter(Weekend==FALSE),
   scale_y_continuous(labels=scales::percent) +
   # facet_grid(~Weekend) +
   ylab("Relative class frequencies") +
-  ggtitle("Revenue distribution during workdays")
+  ggtitle("Revenue distribution during workdays") +
+  theme_light()
 
 ggplot(data = df %>% filter(Weekend==TRUE), 
        aes(x = Revenue, y = (..count..)/sum(..count..))
@@ -267,7 +294,8 @@ ggplot(data = df %>% filter(Weekend==TRUE),
   scale_y_continuous(labels=scales::percent) +
   # facet_grid(~Weekend) +
   ylab("Relative class frequencies") + 
-  ggtitle("Revenue distribution during weekend")
+  ggtitle("Revenue distribution during weekend") +
+  theme_light()
 ```
 
 We can see that users that came to the website during the weekend are a little bit more likely to buy something. During the week rate of buyers is about 17.5%, and for the weekend its 20%. It is not a suprise, during the weekend people usually have more time for shopping.
@@ -319,7 +347,8 @@ mds_df$class <- sample_df$Revenue
 
 mds_df %>%
   ggplot(mapping = aes(x = mds_df[,1], y = mds_df[,2], color = class)) + 
-  geom_point(alpha=.5)
+  geom_point(alpha=.5) +
+  theme_light()
 ```
 
 Some structure of our data was obtained. We can see dense cluster of sessions that finished whith purchase, and a whole bunch of other sessions.
@@ -354,7 +383,8 @@ mds_df$class <- sample_df$Revenue
 
 mds_df %>%
   ggplot(mapping = aes(x = mds_df[,1], y = mds_df[,2], color = class)) + 
-  geom_point(alpha=.5)
+  geom_point(alpha=.5) +
+  theme_light()
 ```
 
 The space is filpped horizontally, but overal structure remains similar. We can observe that in the case of using only most important features, more separeted clusters are visible.
@@ -378,6 +408,7 @@ embedding_df$class <- sample_df$Revenue
 
 embedding_df %>%
   ggplot(mapping = aes(x = embedding_df[,1], y = embedding_df[,2], color = class)) + 
-  geom_point(alpha=.5)
+  geom_point(alpha=.5) +
+  theme_light()
 
 ```
