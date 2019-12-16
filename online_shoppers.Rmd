@@ -2,8 +2,8 @@
 title: "Online shoppers analysis"
 author: "Stanislaw Czekalski, Szymon Puszcz"
 output:
-  html_document: default
   pdf_document: default
+  html_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -298,7 +298,7 @@ ggplot(data = df %>% filter(Weekend==TRUE),
   theme_light()
 ```
 
-We can see that users that came to the website during the weekend are a little bit more likely to buy something. During the week rate of buyers is about 17.5%, and for the weekend its 20%. It is not a suprise, during the weekend people usually have more time for shopping.
+We can see that users that came to the website during the weekend are a little bit more likely to buy something. During the week rate of buyers is about 15%, and for the weekend its 17%. It is not a suprise, during the weekend people usually have more time for shopping.
 
 ## Random Forest proximity
 In order to get a better understanding of our data, we may try to capture its structure. As we've observed our data consists of variables of different types: we have both numeric and categorical features, so it is difficult to come up with a metric suitable for clustering. What we can do instead is to train Random Forest, and get pairwise similarities between objects by counting how many times objects end up in the same leaf node, and use this proximity matrix to perform Multidimensional Scalling, that would create two-dimensional embediing of our data in some abstract space.
